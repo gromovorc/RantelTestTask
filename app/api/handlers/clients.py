@@ -26,7 +26,7 @@ async def create_client_handler(request: web.Request):
         return web.json_response(client, status=201)
 
     except IntegrityError:
-        raise web.HTTPConflict(text="client with this email already exists")
+        raise web.HTTPConflict(text="client with this email and name already exists")
 
 async def get_client_handler(request: web.Request):
     session = request["db"]

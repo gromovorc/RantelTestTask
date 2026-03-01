@@ -13,7 +13,6 @@ class ClientsService:
         insert_stmt = pg_insert(clients_table).values(
             name=name,
             email=email
-
         ).returning(
             clients_table.c.id,
             clients_table.c.name,
