@@ -60,3 +60,19 @@ async def update_operator_handler(request: web.Request):
         raise web.HTTPConflict(text="please, check status, email and name!")
     except ValueError:
         raise web.HTTPBadRequest(text="check parameters")
+
+async def get_operator_handler(request: web.Request):
+    session = request["db"]
+
+    service = OperatorsService(session)
+
+    try:
+        operator_id = int(request.match_info["operator_id"])
+    except ValueError:
+        raise web.HTTPBadRequest(text="operator_id must be int")
+
+    operator = await service.get_operator(operator_id)
+
+    if not operator:
+        raise web.HTTPNotFound(text="client not found")
+    return web.json_response(operator, status=200)

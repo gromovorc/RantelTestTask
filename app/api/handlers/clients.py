@@ -51,10 +51,14 @@ async def get_clients_list_handler(request: web.Request):
 
     try:
         limit, offset = int(request.query.get("limit", "20")), int(request.query.get("offset", "0"))
+
+        if limit < 1 or offset < 0:
+            raise web.HTTPBadRequest(text="limit/offset must be positive number")
+
     except (ValueError, TypeError):
         raise web.HTTPBadRequest(text="limit/offset must be int")
 
-    rows = await service.get_clients_list(limit=min(limit, 100), offset=max(offset, 0))
+    rows = await service.get_clients_list(limit=min(limit, 100), offset=offset)
 
     if not rows:
         raise web.HTTPNotFound(text="clients not found")

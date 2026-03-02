@@ -57,3 +57,13 @@ class OperatorsService:
         row = result.mappings().one_or_none()
 
         return dict(row) if row else None
+
+    async def get_operator(self, operator_id: int) -> dict | None:
+
+        select_stmt = sa.select(operators_table).where(operators_table.c.id == operator_id)
+
+        rows = await self._session.execute(select_stmt)
+
+        row = rows.mappings().one_or_none()
+
+        return dict(row) if row else None
