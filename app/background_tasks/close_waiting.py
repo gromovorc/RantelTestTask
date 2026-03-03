@@ -1,5 +1,4 @@
 import asyncio
-import contextlib
 from collections.abc import AsyncIterator
 import sqlalchemy as sa
 import logging
@@ -13,7 +12,7 @@ from app.services.dashboard import CACHE_KEY
 
 logger = logging.getLogger(__name__)
 
-async def close_tickets_in_waiting(app: web.Application) -> AsyncIterator[None]:
+async def close_tickets_in_waiting(app: web.Application) -> None:
     logger.info("background closer for tickets started")
     while True:
         try:
@@ -47,11 +46,11 @@ async def close_tickets_in_waiting(app: web.Application) -> AsyncIterator[None]:
                         if updated:
                             closed += 1
 
-                        logger.info("closer: % closing % ticket", closed, ticket_id)
+                    logger.info("%d closed", closed)
 
-                        r = app.get("redis")
-                        if r:
-                            await r.delete(CACHE_KEY)
+                    r = app.get("redis")
+                    if r:
+                        await r.delete(CACHE_KEY)
 
         except asyncio.CancelledError:
             logger.info("background closer for tickets done")
