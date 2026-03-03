@@ -27,7 +27,11 @@ class ClientsService:
 
     async def get_client(self, client_id: int) -> dict | None:
 
-        select_stmt = sa.select(clients_table).where(clients_table.c.id == client_id)
+        select_stmt = sa.select(
+            clients_table.c.id,
+            clients_table.c.name,
+            clients_table.c.email,
+        ).where(clients_table.c.id == client_id)
 
         rows = await self._session.execute(select_stmt)
 
@@ -36,7 +40,11 @@ class ClientsService:
         return dict(row) if row else None
 
     async def get_clients_list(self, limit: int = 20, offset: int = 0) -> list[dict]:
-        select_stmt = sa.select(clients_table).order_by(clients_table.c.id).limit(limit).offset(offset)
+        select_stmt = sa.select(
+            clients_table.c.id,
+            clients_table.c.name,
+            clients_table.c.email,
+        ).order_by(clients_table.c.id).limit(limit).offset(offset)
 
         rows = await self._session.execute(select_stmt)
 

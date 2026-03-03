@@ -27,6 +27,21 @@ class OperatorsService:
 
         return dict(result.mappings().one())
 
+    async def get_operator(self, operator_id: int) -> dict | None:
+
+        select_stmt = sa.select(
+            operators_table.c.id,
+            operators_table.c.name,
+            operators_table.c.email,
+            operators_table.c.status,
+        ).where(operators_table.c.id == operator_id)
+
+        rows = await self._session.execute(select_stmt)
+
+        row = rows.mappings().one_or_none()
+
+        return dict(row) if row else None
+
     async def update_operator(self, operator_id: int, name: str | None = None, email: str | None = None, status: str | None = None) -> dict:
 
         update_stmt = (
@@ -58,12 +73,3 @@ class OperatorsService:
 
         return dict(row) if row else None
 
-    async def get_operator(self, operator_id: int) -> dict | None:
-
-        select_stmt = sa.select(operators_table).where(operators_table.c.id == operator_id)
-
-        rows = await self._session.execute(select_stmt)
-
-        row = rows.mappings().one_or_none()
-
-        return dict(row) if row else None

@@ -29,6 +29,22 @@ async def create_operator_handler(request: web.Request):
     except IntegrityError:
         raise web.HTTPConflict(text="operator with this email and name already exists")
 
+async def get_operator_handler(request: web.Request):
+    session = request["db"]
+
+    service = OperatorsService(session)
+
+    try:
+        operator_id = int(request.match_info["operator_id"])
+    except ValueError:
+        raise web.HTTPBadRequest(text="operator_id must be int")
+
+    operator = await service.get_operator(operator_id)
+
+    if not operator:
+        raise web.HTTPNotFound(text="operator not found")
+    return web.json_response(operator, status=200)
+
 async def update_operator_handler(request: web.Request):
     session = request["db"]
 
@@ -61,18 +77,3 @@ async def update_operator_handler(request: web.Request):
     except ValueError:
         raise web.HTTPBadRequest(text="check parameters")
 
-async def get_operator_handler(request: web.Request):
-    session = request["db"]
-
-    service = OperatorsService(session)
-
-    try:
-        operator_id = int(request.match_info["operator_id"])
-    except ValueError:
-        raise web.HTTPBadRequest(text="operator_id must be int")
-
-    operator = await service.get_operator(operator_id)
-
-    if not operator:
-        raise web.HTTPNotFound(text="client not found")
-    return web.json_response(operator, status=200)

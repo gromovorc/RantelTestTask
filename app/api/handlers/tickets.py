@@ -119,6 +119,43 @@ async def create_ticket_handler(request: web.Request):
     except IntegrityError:
         raise web.HTTPConflict(text="invalid ticket data")
 
+async def get_ticket_handler(request: web.Request):
+    session = request["db"]
+
+    service = TicketsService(session)
+
+    try:
+        ticket_id = int(request.match_info["ticket_id"])
+    except ValueError:
+        raise web.HTTPBadRequest(text="ticket_id must be int")
+
+    ticket = await service.get_ticket(ticket_id)
+
+    if not ticket:
+        raise web.HTTPNotFound(text="ticket not found")
+    return web.json_response(ticket, status=200)
+
+async def get_tickets_list_handler(request: web.Request):
+    session = request["db"]
+
+    service = TicketsService(session)
+
+    try:
+        limit, offset = int(request.query.get("limit", "20")), int(request.query.get("offset", "0"))
+
+        if limit < 1 or offset < 0:
+            raise web.HTTPBadRequest(text="limit/offset must be positive number")
+
+    except (ValueError, TypeError):
+        raise web.HTTPBadRequest(text="limit/offset must be int")
+
+    rows = await service.get_clients_list(limit=min(limit, 100), offset=offset)
+
+    if not rows:
+        raise web.HTTPNotFound(text="clients not found")
+
+    return web.json_response(rows, status=200)
+
 async def update_ticket_handler(request: web.Request):
     session = request["db"]
 

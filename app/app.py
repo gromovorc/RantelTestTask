@@ -3,8 +3,7 @@ import contextlib
 
 from aiohttp import web
 
-from app.api.handlers.clients import create_client_handler
-from app.api.handlers.operators import create_operator_handler, update_operator_handler
+from app.api.routes import setup_routes
 from app.background_tasks.close_waiting import close_tickets_in_waiting
 from app.db.database import engine
 from app.db.middlewares import session_middleware
@@ -39,10 +38,6 @@ def create_app() -> web.Application:
     app.cleanup_ctx.append(close_tickets_in_waiting_ctx)
 
     app.router.add_get("/health", health)
-    app.router.add_post("/clients", create_client_handler)
 
-    app.router.add_patch("/operators/{operator_id}", update_operator_handler)
-    app.router.add_post("/operators", create_operator_handler)
-
-
+    setup_routes(app)
     return app

@@ -54,6 +54,48 @@ class TicketsService:
 
         return dict(result.mappings().one())
 
+    async def get_ticket(self, ticket_id: int) -> dict | None:
+
+        select_stmt = sa.select(
+            tickets_table.c.id,
+            tickets_table.c.priority,
+            tickets_table.c.status,
+            tickets_table.c.subject,
+            tickets_table.c.operator_id,
+            tickets_table.c.client_id,
+        ).where(tickets_table.c.id == ticket_id)
+
+        rows = await self._session.execute(select_stmt)
+
+        row = rows.mappings().one_or_none()
+
+        return dict(row) if row else None
+
+    async def get_ticket_list(self, limit: int = 20, offset: int = 0) -> list[dict]:
+
+        select_stmt = sa.select(
+            tickets_table.c.id,
+            tickets_table.c.priority,
+            tickets_table.c.status,
+            tickets_table.c.subject,
+            tickets_table.c.operator_id,
+            tickets_table.c.client_id,
+        ).order_by(tickets_table.c.id).limit(limit).offset(offset)
+
+        rows = await self._session.execute(select_stmt)
+
+        return [dict(row) for row in rows.mappings().all()]
+
+    async def get_ticket_status(self, ticket_id: int) -> str:
+
+        select_stmt = sa.select(tickets_table.c.status).where(tickets_table.c.id == ticket_id)
+
+        rows = await self._session.execute(select_stmt)
+
+        row = rows.scalar_one_or_none()
+
+        return row
+
     async def update_ticket(
             self,
             ticket_id: int,
@@ -139,23 +181,5 @@ class TicketsService:
 
         return dict(row) if row else None
 
-    async def get_ticket(self, ticket_id: int) -> dict | None:
 
-        select_stmt = sa.select(tickets_table).where(tickets_table.c.id == ticket_id)
-
-        rows = await self._session.execute(select_stmt)
-
-        row = rows.mappings().one_or_none()
-
-        return dict(row) if row else None
-
-    async def get_ticket_status(self, ticket_id: int) -> str:
-
-        select_stmt = sa.select(tickets_table.c.status).where(tickets_table.c.id == ticket_id)
-
-        rows = await self._session.execute(select_stmt)
-
-        row = rows.scalar_one_or_none()
-
-        return row
 

@@ -9,8 +9,12 @@ class Settings(BaseSettings):
     debug: bool
     database_url: str
 
+    database_url: str
+    redis_url: str = "redis://127.0.0.1:6379/0"
+
     model_config = SettingsConfigDict(
-        env_file= ENV_PATH
+        env_file=ENV_PATH,
+        extra="ignore",
     )
 
 settings = Settings()

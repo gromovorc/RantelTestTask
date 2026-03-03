@@ -61,4 +61,5 @@ async def get_clients_list_handler(request: web.Request):
 
     if not rows:
         raise web.HTTPNotFound(text="clients not found")
+
     return web.json_response(rows, status=200)
