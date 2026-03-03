@@ -3,7 +3,6 @@ from sqlalchemy.exc import IntegrityError
 
 from app.services.clients import ClientsService
 
-
 async def create_client_handler(request: web.Request):
     session = request["db"]
 

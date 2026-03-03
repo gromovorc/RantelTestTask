@@ -1,6 +1,7 @@
 from aiohttp import web
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+import redis
 
 from app.services.tickets import TicketsService
 from app.services.clients import ClientsService
@@ -15,6 +16,8 @@ ALLOWED_STATUS_TRANSITIONS = {
     "resolved": {"resolved", "closed", "in_progress"},
     "closed": {"closed"}
 }
+
+r = redis.Redis(decode_responses=True)
 
 async def check_payload(
         session: AsyncSession,
@@ -109,6 +112,8 @@ async def create_ticket_handler(request: web.Request):
             operator_id=operator_id
         )
 
+        await r.delete("dashboard:ticket_counts")
+
         return web.json_response(ticket, status=201)
 
     except IntegrityError:
@@ -167,6 +172,12 @@ async def update_ticket_handler(request: web.Request):
             ticket_id=ticket_id,
             status=status
         )
+
+        if status is not None:
+            current_status = await service.get_ticket_status(ticket_id)
+            if status != current_status:
+                await r.delete("dashboard:ticket_counts")
+
         return web.json_response(ticket, status=200)
 
     except IntegrityError:
