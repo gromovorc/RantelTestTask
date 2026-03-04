@@ -15,8 +15,8 @@ ENV/
 
 *.log
 
-#.env
-#.env.*
+.env
+.env.*
 
 .pytest_cache/
 .coverage

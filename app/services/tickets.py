@@ -2,7 +2,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 import sqlalchemy as sa
 
-from app.db.tables import tickets_table, operators_table
+from app.db.tables import tickets_table, operators_table, messages_table
 
 
 class TicketsService:
@@ -181,5 +181,16 @@ class TicketsService:
 
         return dict(row) if row else None
 
+    async def delete_ticket(self, ticket_id: int) -> bool:
 
+        await self._session.execute(
+            sa.delete(messages_table).where(messages_table.c.ticket_id == ticket_id)
+        )
+
+        result = await self._session.execute(
+            sa.delete(tickets_table).where(tickets_table.c.id == ticket_id).returning(tickets_table.c.id)
+        )
+        deleted_id = result.scalar_one_or_none()
+        await self._session.commit()
+        return deleted_id is not None
 

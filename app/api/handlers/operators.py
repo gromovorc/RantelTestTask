@@ -45,6 +45,27 @@ async def get_operator_handler(request: web.Request):
         raise web.HTTPNotFound(text="operator not found")
     return web.json_response(operator, status=200)
 
+async def get_operators_list_handler(request: web.Request):
+    session = request["db"]
+
+    service = OperatorsService(session)
+
+    try:
+        limit, offset = int(request.query.get("limit", "20")), int(request.query.get("offset", "0"))
+
+        if limit < 1 or offset < 0:
+            raise web.HTTPBadRequest(text="limit/offset must be positive number")
+
+    except (ValueError, TypeError):
+        raise web.HTTPBadRequest(text="limit/offset must be int")
+
+    rows = await service.get_operators_list(limit=min(limit, 100), offset=offset)
+
+    if not rows:
+        raise web.HTTPNotFound(text="operators not found")
+
+    return web.json_response(rows, status=200)
+
 async def update_operator_handler(request: web.Request):
     session = request["db"]
 
@@ -77,3 +98,20 @@ async def update_operator_handler(request: web.Request):
     except ValueError:
         raise web.HTTPBadRequest(text="check parameters")
 
+async def delete_operator_handler(request: web.Request):
+    session = request["db"]
+    try:
+        operator_id = int(request.match_info["operator_id"])
+    except (ValueError, TypeError):
+        raise web.HTTPBadRequest(text="client_id must be int")
+
+    service = OperatorsService(session)
+    try:
+        deleted = await service.delete_operator(operator_id)
+    except IntegrityError:
+        raise web.HTTPConflict(text="operator has tickets")
+
+    if not deleted:
+        raise web.HTTPNotFound(text="operator not found")
+
+    return web.Response(status=204)

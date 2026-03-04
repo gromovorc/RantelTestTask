@@ -219,3 +219,18 @@ async def update_ticket_handler(request: web.Request):
 
     except IntegrityError:
         raise web.HTTPConflict(text="please, check data!")
+
+async def delete_ticket_handler(request: web.Request):
+    session = request["db"]
+    try:
+        ticket_id = int(request.match_info["ticket_id"])
+    except (ValueError, TypeError):
+        raise web.HTTPBadRequest(text="ticket_id must be int")
+
+    service = TicketsService(session)
+    deleted = await service.delete_ticket(ticket_id)
+
+    if not deleted:
+        raise web.HTTPNotFound(text="ticket not found")
+
+    return web.Response(status=204)

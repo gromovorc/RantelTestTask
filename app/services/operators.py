@@ -73,3 +73,9 @@ class OperatorsService:
 
         return dict(row) if row else None
 
+    async def delete_operator(self, operator_id: int) -> bool:
+        stmt = sa.delete(operators_table).where(operators_table.c.id == operator_id).returning(operators_table.c.id)
+        result = await self._session.execute(stmt)
+        deleted_id = result.scalar_one_or_none()
+        await self._session.commit()
+        return deleted_id is not None
