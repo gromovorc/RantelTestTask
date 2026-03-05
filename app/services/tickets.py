@@ -9,7 +9,11 @@ class TicketsService:
     def __init__(self, session: AsyncSession):
         self._session = session
 
-    async def add_ticket(self, client_id: int, priority: str, subject: str, operator_id: int | None = None) -> dict:
+    async def add_ticket(self,
+                         client_id: int,
+                         priority: str,
+                         subject: str,
+                         operator_id: int | None = None) -> dict:
 
         if operator_id is None:
             select_stmt = (

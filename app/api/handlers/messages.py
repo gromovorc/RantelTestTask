@@ -3,13 +3,12 @@ from sqlalchemy.exc import IntegrityError
 
 from app.services.messages import MessagesService
 
-async def create_message_handler(request: web.Request):
+async def create_message_handler(request: web.Request) -> web.Response:
     session = request["db"]
 
     try:
         data = await request.json()
     except Exception as e:
-        print(e)
         raise web.HTTPBadRequest(text="invalid json")
 
     try:
@@ -40,9 +39,8 @@ async def create_message_handler(request: web.Request):
     except IntegrityError:
         raise web.HTTPConflict(text="invalid message data")
 
-async def get_message_handler(request: web.Request):
+async def get_message_handler(request: web.Request) -> web.Response:
     session = request["db"]
-
     service = MessagesService(session)
 
     try:
@@ -56,9 +54,8 @@ async def get_message_handler(request: web.Request):
         raise web.HTTPNotFound(text="message not found")
     return web.json_response(message, status=200)
 
-async def get_messages_list_handler(request: web.Request):
+async def get_messages_list_handler(request: web.Request) -> web.Response:
     session = request["db"]
-
     service = MessagesService(session)
 
     try:

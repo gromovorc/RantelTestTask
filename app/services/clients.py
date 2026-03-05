@@ -50,7 +50,10 @@ class ClientsService:
 
         return [dict(row) for row in rows.mappings().all()]
 
-    async def update_client(self, client_id: int, name: str | None = None, email: str | None = None) -> dict | None:
+    async def update_client(self,
+                            client_id: int,
+                            name: str | None = None,
+                            email: str | None = None) -> dict | None:
         values = {row: value for row, value in (("name", name), ("email", email)) if value is not None}
         if not values:
             raise ValueError("data is empty")

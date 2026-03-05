@@ -67,5 +67,5 @@ messages_table = Table(
     Column('instance_created', DateTime(timezone=True), nullable=False, server_default=func.now()),
     Column('last_updated', DateTime(timezone=True), nullable=False, server_default=func.now()),
 
-CheckConstraint("author_type IN ('client', 'operator')", name="ck_messages_check_author_type")
+    CheckConstraint("author_type IN ('client', 'operator')", name="ck_messages_check_author_type")
 )

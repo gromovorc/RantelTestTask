@@ -1,11 +1,11 @@
 from aiohttp import web
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-import redis
 
 from app.services.tickets import TicketsService
 from app.services.clients import ClientsService
 from app.services.operators import OperatorsService
+from app.services.dashboard import CACHE_KEY
 
 ALLOWED_PRIORITY = {'low', 'normal', 'high'}
 ALLOWED_STATUS = {'new', 'in_progress', 'waiting', 'resolved', 'closed'}
@@ -17,7 +17,10 @@ ALLOWED_STATUS_TRANSITIONS = {
     "closed": {"closed"}
 }
 
-r = redis.Redis(decode_responses=True)
+async def _invalidate_dashboard_cache(request: web.Request) -> None:
+    r = request.app.get("redis")
+    if r:
+        await r.delete(CACHE_KEY)
 
 async def check_payload(
         session: AsyncSession,
@@ -67,13 +70,12 @@ async def check_payload(
         if all(parameter is None for parameter in (client_id, priority, operator_id, status, subject)):
             raise web.HTTPBadRequest(text="nothing to update")
 
-async def create_ticket_handler(request: web.Request):
+async def create_ticket_handler(request: web.Request) -> web.Response:
     session = request["db"]
 
     try:
         data = await request.json()
     except Exception as e:
-        print(e)
         raise web.HTTPBadRequest(text="invalid json")
 
     client_id = data.get("client_id")
@@ -111,15 +113,13 @@ async def create_ticket_handler(request: web.Request):
             subject=subject,
             operator_id=operator_id
         )
-
-        await r.delete("dashboard:ticket_counts")
-
+        await _invalidate_dashboard_cache(request)
         return web.json_response(ticket, status=201)
 
     except IntegrityError:
         raise web.HTTPConflict(text="invalid ticket data")
 
-async def get_ticket_handler(request: web.Request):
+async def get_ticket_handler(request: web.Request) -> web.Response:
     session = request["db"]
 
     service = TicketsService(session)
@@ -135,7 +135,7 @@ async def get_ticket_handler(request: web.Request):
         raise web.HTTPNotFound(text="ticket not found")
     return web.json_response(ticket, status=200)
 
-async def get_tickets_list_handler(request: web.Request):
+async def get_tickets_list_handler(request: web.Request) -> web.Response:
     session = request["db"]
 
     service = TicketsService(session)
@@ -149,20 +149,19 @@ async def get_tickets_list_handler(request: web.Request):
     except (ValueError, TypeError):
         raise web.HTTPBadRequest(text="limit/offset must be int")
 
-    rows = await service.get_clients_list(limit=min(limit, 100), offset=offset)
+    rows = await service.get_ticket_list(limit=min(limit, 100), offset=offset)
 
     if not rows:
         raise web.HTTPNotFound(text="clients not found")
 
     return web.json_response(rows, status=200)
 
-async def update_ticket_handler(request: web.Request):
+async def update_ticket_handler(request: web.Request) -> web.Response:
     session = request["db"]
 
     try:
         data = await request.json()
     except Exception as e:
-        print(e)
         raise web.HTTPBadRequest(text="invalid json")
 
     ticket_id = request.match_info["ticket_id"]
@@ -213,14 +212,14 @@ async def update_ticket_handler(request: web.Request):
         if status is not None:
             current_status = await service.get_ticket_status(ticket_id)
             if status != current_status:
-                await r.delete("dashboard:ticket_counts")
+                await _invalidate_dashboard_cache(request)
 
         return web.json_response(ticket, status=200)
 
     except IntegrityError:
         raise web.HTTPConflict(text="please, check data!")
 
-async def delete_ticket_handler(request: web.Request):
+async def delete_ticket_handler(request: web.Request) -> web.Response:
     session = request["db"]
     try:
         ticket_id = int(request.match_info["ticket_id"])
@@ -233,4 +232,5 @@ async def delete_ticket_handler(request: web.Request):
     if not deleted:
         raise web.HTTPNotFound(text="ticket not found")
 
+    await _invalidate_dashboard_cache(request)
     return web.Response(status=204)

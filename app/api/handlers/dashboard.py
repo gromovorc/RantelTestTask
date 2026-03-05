@@ -2,7 +2,7 @@ from aiohttp import web
 
 from app.services.dashboard import DashboardService
 
-async def dashboard_ticket_counts_handler(request: web.Request):
+async def dashboard_ticket_counts_handler(request: web.Request) -> web.Response:
 
     session = request["db"]
     redis = request.app["redis"]

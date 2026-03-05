@@ -8,5 +8,4 @@ tickets_routes.post("/tickets")(create_ticket_handler)
 tickets_routes.get("/tickets/{ticket_id}")(get_ticket_handler)
 tickets_routes.get("/tickets")(get_tickets_list_handler)
 tickets_routes.patch("/tickets/{ticket_id}")(update_ticket_handler)
-
 tickets_routes.delete("/tickets/{ticket_id}")(delete_ticket_handler)

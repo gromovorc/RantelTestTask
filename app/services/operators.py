@@ -42,7 +42,22 @@ class OperatorsService:
 
         return dict(row) if row else None
 
-    async def update_operator(self, operator_id: int, name: str | None = None, email: str | None = None, status: str | None = None) -> dict:
+    async def get_operators_list(self, limit: int = 20, offset: int = 0) -> list[dict]:
+        select_stmt = sa.select(
+            operators_table.c.id,
+            operators_table.c.name,
+            operators_table.c.email,
+        ).order_by(operators_table.c.id).limit(limit).offset(offset)
+
+        rows = await self._session.execute(select_stmt)
+
+        return [dict(row) for row in rows.mappings().all()]
+
+    async def update_operator(self,
+                              operator_id: int,
+                              name: str | None = None,
+                              email: str | None = None,
+                              status: str | None = None) -> dict:
 
         update_stmt = (
             sa.update(operators_table)

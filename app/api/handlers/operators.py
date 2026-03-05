@@ -5,13 +5,12 @@ from app.services.operators import OperatorsService
 
 ALLOWED_STATUS = {"online", "offline", "busy"}
 
-async def create_operator_handler(request: web.Request):
+async def create_operator_handler(request: web.Request) -> web.Response:
     session = request["db"]
 
     try:
         data = await request.json()
     except Exception as e:
-        print(e)
         raise web.HTTPBadRequest(text="invalid json")
 
     name, email, status = data.get("name"), data.get("email"), data.get("status")
@@ -29,7 +28,7 @@ async def create_operator_handler(request: web.Request):
     except IntegrityError:
         raise web.HTTPConflict(text="operator with this email and name already exists")
 
-async def get_operator_handler(request: web.Request):
+async def get_operator_handler(request: web.Request) -> web.Response:
     session = request["db"]
 
     service = OperatorsService(session)
@@ -45,7 +44,7 @@ async def get_operator_handler(request: web.Request):
         raise web.HTTPNotFound(text="operator not found")
     return web.json_response(operator, status=200)
 
-async def get_operators_list_handler(request: web.Request):
+async def get_operators_list_handler(request: web.Request) -> web.Response:
     session = request["db"]
 
     service = OperatorsService(session)
@@ -66,17 +65,19 @@ async def get_operators_list_handler(request: web.Request):
 
     return web.json_response(rows, status=200)
 
-async def update_operator_handler(request: web.Request):
+async def update_operator_handler(request: web.Request) -> web.Response:
     session = request["db"]
 
     try:
         data = await request.json()
     except Exception as e:
-        print(e)
         raise web.HTTPBadRequest(text="invalid json")
 
     try:
-        operator_id, name, email, status = int(request.match_info["operator_id"]), data.get("name"), data.get("email"), data.get("status")
+        operator_id = int(request.match_info["operator_id"])
+        name = data.get("name")
+        email = data.get("email")
+        status = data.get("status")
     except (ValueError, TypeError):
         raise web.HTTPBadRequest(text="operator_id must be int")
 
@@ -98,7 +99,7 @@ async def update_operator_handler(request: web.Request):
     except ValueError:
         raise web.HTTPBadRequest(text="check parameters")
 
-async def delete_operator_handler(request: web.Request):
+async def delete_operator_handler(request: web.Request) -> web.Response:
     session = request["db"]
     try:
         operator_id = int(request.match_info["operator_id"])

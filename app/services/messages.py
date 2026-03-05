@@ -1,8 +1,14 @@
+from sqlalchemy import RowMapping
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 import sqlalchemy as sa
 
 from app.db.tables import messages_table
+
+def _row_to_dict(row: dict | RowMapping) -> dict:
+    result = dict(row)
+    result["message_time"] = result.pop("instance_created").isoformat()
+    return result
 
 class MessagesService:
     def __init__(self, session: AsyncSession):
@@ -24,14 +30,13 @@ class MessagesService:
             messages_table.c.text,
             messages_table.c.author_type,
             messages_table.c.author_id,
-            messages_table.c.ticket_id
+            messages_table.c.ticket_id,
+            messages_table.c.instance_created
         )
 
         result = await self._session.execute(insert_stmt)
-
         await self._session.commit()
-
-        return dict(result.mappings().one())
+        return _row_to_dict(result.mappings().one())
 
     async def get_message(self, message_id: int) -> dict | None:
 
@@ -48,14 +53,12 @@ class MessagesService:
 
         row = rows.mappings().one_or_none()
 
-        if row:
-            message = dict(row)
-            message["message_time"] = message.pop("instance_created").isoformat()
-            return message
+        return _row_to_dict(row) if row else None
 
-        return None
-
-    async def get_messages_list(self, ticket_id: int, limit: int = 20, offset: int = 0) -> list[dict]:
+    async def get_messages_list(self,
+                                ticket_id: int,
+                                limit: int = 20,
+                                offset: int = 0) -> list[dict]:
         select_stmt = (
             sa.select(
                 messages_table.c.id,
@@ -73,13 +76,7 @@ class MessagesService:
 
         rows = await self._session.execute(select_stmt)
 
-        items = []
-        for row in rows.mappings().all():
-            item = dict(row)
-            item["message_time"] = item["instance_created"].isoformat()
-            items.append(item)
-
-        return items
+        return [_row_to_dict(row) for row in rows.mappings().all()]
 
     async def update_message(
             self,
@@ -91,12 +88,14 @@ class MessagesService:
             .where(messages_table.c.id == message_id)
             .values(
                 text=text,
-                last_updated=sa.func().now()
+                last_updated=sa.func.now()
             )
             .returning(messages_table.c.id,
                        messages_table.c.author_type,
                        messages_table.c.author_id,
-                       messages_table.c.text)
+                       messages_table.c.text,
+                       messages_table.c.instance_created
+                       )
         )
 
 
@@ -106,9 +105,7 @@ class MessagesService:
 
         row = result.mappings().one_or_none()
 
-        message = dict(row)
-        message["message_time"] = message.pop("instance_created").isoformat()
-        return message
+        return _row_to_dict(row) if row else None
 
     async def delete_message(self, message_id: int) -> bool:
         stmt = sa.delete(messages_table).where(messages_table.c.id == message_id).returning(messages_table.c.id)

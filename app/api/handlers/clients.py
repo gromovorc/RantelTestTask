@@ -3,13 +3,13 @@ from sqlalchemy.exc import IntegrityError
 
 from app.services.clients import ClientsService
 
-async def create_client_handler(request: web.Request):
+async def create_client_handler(request: web.Request) -> web.Response:
     session = request["db"]
 
     try:
         data = await request.json()
     except Exception as e:
-        print(e)
+
         raise web.HTTPBadRequest(text="invalid json")
 
     name, email = data.get("name"), data.get("email")
@@ -27,7 +27,7 @@ async def create_client_handler(request: web.Request):
     except IntegrityError:
         raise web.HTTPConflict(text="client with this email and name already exists")
 
-async def get_client_handler(request: web.Request):
+async def get_client_handler(request: web.Request) -> web.Response:
     session = request["db"]
 
     service = ClientsService(session)
@@ -43,7 +43,7 @@ async def get_client_handler(request: web.Request):
         raise web.HTTPNotFound(text="client not found")
     return web.json_response(client, status=200)
 
-async def get_clients_list_handler(request: web.Request):
+async def get_clients_list_handler(request: web.Request) -> web.Response:
     session = request["db"]
 
     service = ClientsService(session)
@@ -101,7 +101,7 @@ async def update_client_handler(request: web.Request) -> web.Response:
 
     return web.json_response(client, status=200)
 
-async def delete_client_handler(request: web.Request):
+async def delete_client_handler(request: web.Request) -> web.Response:
     session = request["db"]
     try:
         client_id = int(request.match_info["client_id"])

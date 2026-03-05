@@ -26,8 +26,6 @@ if config.config_file_name is not None:
 from app.db.tables import _metadata
 from app.core.config import settings
 
-print("TABLES:", list(_metadata.tables.keys()))
-print("ALEMBIC URL:", settings.database_url)
 # target_metadata = mymodel.Base.metadata
 target_metadata = _metadata
 
